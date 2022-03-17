@@ -5,6 +5,7 @@ import os
 import uuid
 
 import aiohttp
+from aiohttp import web
 import globals, utils, assets, tasks
 
 
@@ -32,7 +33,7 @@ async def download_image(session: aiohttp.ClientSession, task: tasks.Task):
       task.error(f"thumbnail download error: {resp.status}")
 
 
-async def download_image_batch(session: aiohttp.ClientSession, parent_task: tasks.Task, images: list[tuple] =[], limit_per_host=0):
+async def download_image_batch(session: aiohttp.ClientSession, parent_task: tasks.Task, images: list[tuple] =[]):
   """Download batch of images. images are tuples of file path and url."""
   
   coroutines = []
@@ -86,7 +87,7 @@ async def parse_thumbnails(task: tasks.Task):
   return small_thumbnails, full_thumbnails
 
 
-async def do_search(session: aiohttp.ClientSession, data: dict, task_id: str):
+async def do_search(request: web.Request, data: dict, task_id: str):
   
   app_id = data['app_id']
   del data['app_id']
@@ -97,6 +98,7 @@ async def do_search(session: aiohttp.ClientSession, data: dict, task_id: str):
   rdata['results'] = []
   headers = utils.get_headers(task.data['PREFS']['api_key'])
 
+  session = request.app['SESSION_API_REQUESTS']
   async with session.get(task.data['urlquery'], headers=headers) as resp:
     await resp.text()
     response = await resp.json()
@@ -125,11 +127,6 @@ async def do_search(session: aiohttp.ClientSession, data: dict, task_id: str):
     small_thumbnails, full_thumbnails = await parse_thumbnails(task)
 
     # thumbnails fetching
-    await download_image_batch(session, task, small_thumbnails)
+    await download_image_batch(request.app['SESSION_SMALL_THUMBS'], task, small_thumbnails)
+    await download_image_batch(request.app['SESSION_BIG_THUMBS'], task, full_thumbnails)
 
-    # if self.stopped():
-    #   # utils.p('end search thread')
-    #   return
-    # full size images have connection limit to get lower priority
-    await download_image_batch(session, task, full_thumbnails, limit_per_host=3)
-    # small thumbnail downloads
