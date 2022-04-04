@@ -15,28 +15,31 @@ def add_dependencies():
 def get_dependencies_path():
   """Get path to dependencies directory. Here we will install and search for external modules."""
 
-  fallback_path = path.join(path.dirname(__file__), "dependencies")
-
-  return path.abspath(fallback_path)
+  deps_path = path.join(path.dirname(__file__), "dependencies")
+  return path.abspath(deps_path)
 
 def ensure_dependencies():
   """Make sure that dependencies which need installation are available. Install dependencies if needed."""
 
   tried = 0
-  while tried < 2:
+  while tried < 3:
     tried = tried + 1
     try:
       import aiohttp
-      del aiohttp
       return
     except:
-      started = time.time()
-      requirements = path.join(path.dirname(__file__), 'requirements.txt')
-      ok = subprocess.call([sys.executable, '-m', 'ensurepip'])
-      print(f"Ensure pip exited: {ok}")
+      install_dependencies()
 
-      ok = subprocess.call([sys.executable, '-m', 'pip', 'install', '-t', get_dependencies_path(), '-r', requirements])
-      print(f"Aiohttp install exited: {ok}")
-      print(f"Install finished in {time.time()-started}")
+def install_dependencies():
+  started = time.time()
 
+  
+  command = [sys.executable, '-m', 'ensurepip']
+  result = subprocess.run(command, capture_output=True, text=True)
+  print(f"PIP INSTALLATION:\ncommand {command} exited: {result.returncode},\nstdout: {result.stdout},\nstderr: {result.stderr}")
 
+  requirements = path.join(path.dirname(__file__), 'requirements.txt')
+  command = [sys.executable, '-m', 'pip', 'install', '--upgrade', '-t', get_dependencies_path(), '-r', requirements]
+  result = subprocess.run(command, capture_output=True, text=True)
+  print(f"AIOHTTP INSTALLATION:\ncommand {command} exited: {result.returncode},\nstdout: {result.stdout},\nstderr: {result.stderr}")
+  print(f"Install finished in {time.time()-started}")
