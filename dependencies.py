@@ -34,7 +34,7 @@ def install_dependencies():
   started = time.time()
 
   
-  command = [sys.executable, '-m', 'ensurepip']
+  command = [sys.executable, '-m', 'ensurepip', '--user']
   result = subprocess.run(command, capture_output=True, text=True)
   print(f"PIP INSTALLATION:\ncommand {command} exited: {result.returncode},\nstdout: {result.stdout},\nstderr: {result.stderr}")
 
