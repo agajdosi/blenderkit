@@ -94,12 +94,8 @@ class Shutdown(web.View):
   """Shedules shutdown of the server."""
 
   async def get(self):
-    asyncio.ensure_future(self.shutdown_in_future())
+    asyncio.ensure_future(shutdown_in_future())
     return web.Response(text='Going to shutdown soon.')
-
-  async def shutdown_in_future(self):
-    await asyncio.sleep(1)
-    sys.exit()
 
 
 async def persistent_sessions(app):
@@ -149,17 +145,22 @@ async def should_i_live(app: web.Application):
   while True:
     since_report = time.time() - globals.last_report_time
     if since_report > globals.TIMEOUT:
-      sys.exit() #we should handle this more nicely
+      #sys.exit() #we should handle this more nicely
+      await shutdown_in_future()
     await asyncio.sleep(10)
 
 async def report_blender_quit(request: web_request.Request):
-
   data = await request.json()
   if data['app_id'] in globals.active_apps:
     globals.active_apps.remove(data['app_id'])
   if len(globals.active_apps)==0:
     print('no more apps to serve, exiting Daemon')
-    sys.exit() #we should handle this more nicely
+    #sys.exit() #we should handle this more nicely
+    await shutdown_in_future()
+
+async def shutdown_in_future():
+  await asyncio.sleep(1)
+  sys.exit()
 
 async def start_background_tasks(app: web.Application):
   app['should_i_live'] = asyncio.create_task(should_i_live(app))

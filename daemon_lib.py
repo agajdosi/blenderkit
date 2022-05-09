@@ -111,14 +111,17 @@ def daemon_is_alive(session: requests.Session) -> tuple[bool, str]:
     return False, f'EXCEPTION OCCURED:", {err}, {type(err)}'
 
 def report_blender_quit():
+  """Report blender is quiting or addon is disabled. Daemon will shutdown if there are not any other instances connected."""
+
   address = get_address()
   with requests.Session() as session:
     url = address + "/report_blender_quit"
     resp = session.get(url, json={'app_id':os.getpid()})
     return resp
 
-def kill_daemon_server():
-  ''' Request to restart the daemon server.'''
+def shutdown_daemon_server():
+  """Request to shutdown the daemon server."""
+
   address = get_address()
   with requests.Session() as session:
     url = address + "/shutdown"
@@ -148,7 +151,7 @@ def start_daemon_server(log_dir: str = None):
     creation_flags = 0
     if platform.system() == "Windows":
       creation_flags = subprocess.CREATE_NO_WINDOW
-    subprocess.Popen(
+    subprocess.call(
       args = [
         sys.executable,
         "-u", daemon_path,
