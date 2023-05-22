@@ -158,7 +158,7 @@ def scene_load(context):
     #     if check_existing(asset_data, resolution = should be here):
     #         for obname in reset_obs[asset_id]:
     #             downloader = s.collection.objects[obname]
-    #             done = try_finished_append(asset_data,
+    #             done = try_finished_appen d(asset_data,
     #                                        model_location=downloader.location,
     #                                        model_rotation=downloader.rotation_euler)
     #
@@ -673,7 +673,7 @@ def replace_resolution_appended(file_paths, asset_data, resolution):
 #
 #
 #                 else:
-#                     done = try_finished_append(asset_data, **tcom.passargs)
+#                     done = try_finished_appen d(asset_data, **tcom.passargs)
 #                     if not done:
 #                         at = asset_data['assetType']
 #                         tcom.passargs['retry_counter'] = tcom.passargs.get('retry_counter', 0) + 1
@@ -696,7 +696,6 @@ def handle_download_task(task: daemon_tasks.Task):
     """
     global download_tasks
     if task.status == "finished":
-        # we still write progress since sometimes the progress bars wouldn't end on 100%
         download_write_progress(task.task_id, task)
         # try to parse, in some states task gets returned to be pending (e.g. in editmode)
         done = download_post(task)
@@ -734,38 +733,29 @@ def download_write_progress(task_id, task):
 
 
 # TODO might get moved to handle all blenderkit stuff, not to slow down.
-def download_post(task: daemon_tasks.Task):
-    """
+def download_post(task: daemon_tasks.Task) -> str:
+    """Do what is needed once download of asset files is finished.
     Check for running and finished downloads.
     Running downloads get checked for progress which is passed to UI.
     Finished downloads are processed and linked/appended to scene.
     Finished downloads can become pending tasks, if Blender isn't ready to append the files.
     """
     global download_tasks
-
     orig_task = download_tasks.get(task.task_id)
     if orig_task is None:
         return
 
     done = False
-
     file_paths = task.result.get("file_paths", [])
     if file_paths == []:
-        bk_logger.debug("library names not found in asset data after download")
+        bk_logger.info("file_paths not found in asset data after download")
         done = True
 
     wm = bpy.context.window_manager
     at = task.data["asset_data"]["assetType"]
-    if not (
-        ((bpy.context.mode == "OBJECT" and (at == "model" or at == "material")))
-        or ((at == "brush") and wm.get("appendable") == True)
-        or at == "scene"
-        or at == "hdr"
-    ):
-        return done
     if (
         ((bpy.context.mode == "OBJECT" and (at == "model" or at == "material")))
-        or ((at == "brush") and wm.get("appendable") == True)
+        or ((at == "brush") and wm.get("appendable") is True)
         or at == "scene"
         or at == "hdr"
     ):
@@ -788,13 +778,13 @@ def download_post(task: daemon_tasks.Task):
         # TODO use redownload in data, this is used for downloading/ copying missing libraries.
         if task.data.get("redownload"):
             # handle lost libraries here:
-            for l in bpy.data.libraries:
+            for library in bpy.data.libraries:
                 if (
-                    l.get("asset_data") is not None
-                    and l["asset_data"]["id"] == task.data["asset_data"]["id"]
+                    library.get("asset_data") is not None
+                    and library["asset_data"]["id"] == task.data["asset_data"]["id"]
                 ):
-                    l.filepath = file_paths[-1]
-                    l.reload()
+                    library.filepath = file_paths[-1]
+                    library.reload()
 
         if task.data.get("replace_resolution"):
             # try to relink
@@ -809,7 +799,7 @@ def download_post(task: daemon_tasks.Task):
             done = True
         else:
             orig_task.update(task.data)
-            done = try_finished_append(file_paths=file_paths, **task.data)
+            done, reason = try_finished_append(file_paths=file_paths, **task.data)
             # if not done:
             # TODO add back re-download capability for deamon - used for lost libraries
             # tcom.passargs['retry_counter'] = tcom.passargs.get('retry_counter', 0) + 1
@@ -817,6 +807,8 @@ def download_post(task: daemon_tasks.Task):
             #
 
         bk_logger.debug("finished download thread")
+    else:
+        return done
     # utils.p('end download timer')
     if done:
         download_tasks.pop(task.task_id)
@@ -917,17 +909,16 @@ def try_finished_append(asset_data, **kwargs):  # location=None, material_target
     if file_names is None:
         file_names = paths.get_download_filepaths(asset_data, kwargs["resolution"])
 
-    bk_logger.debug("try to append already existing asset")
     if len(file_names) == 0:
-        return False
+        return False, None
 
     if not os.path.isfile(file_names[-1]):
-        return False
+        return False, None
 
     kwargs["name"] = asset_data["name"]
     try:
         append_asset(asset_data, **kwargs)
-        return True
+        return True, None
     except Exception as e:
         # TODO: this should distinguis if the appending failed (wrong file)
         # or something else happened(shouldn't delete the files)
@@ -938,12 +929,11 @@ def try_finished_append(asset_data, **kwargs):  # location=None, material_target
                 os.remove(f)
             except Exception as e:
                 bk_logger.error(f"{e}")
-    return False
+    return False, "APPEND FAILED"
 
 
 def get_asset_in_scene(asset_data):
     """tries to find an appended copy of particular asset and duplicate it - so it doesn't have to be appended again."""
-    scene = bpy.context.scene
     for ob in bpy.context.scene.objects:
         ad1 = ob.get("asset_data")
         if not ad1:
@@ -1063,7 +1053,7 @@ def start_download(asset_data, **kwargs) -> bool:
     Return true if new download was started.
     """
     # first check if the asset is already in scene. We can use that asset without checking with server
-    ain, _ = asset_in_scene(asset_data)
+    in_scene, _ = asset_in_scene(asset_data)
     # quota_ok = ain is not False
     # if resolution:
     #     kwargs['resolution'] = resolution
@@ -1072,9 +1062,8 @@ def start_download(asset_data, **kwargs) -> bool:
     if check_downloading(asset_data, **kwargs):
         return False
 
-    if ain and not kwargs.get("replace_resolution"):
-        # this goes to appending asset - where it should duplicate the original asset already in scene.
-        append_ok = try_finished_append(asset_data, **kwargs)
+    if in_scene and not kwargs.get("replace_resolution"):
+        append_ok, _ = try_finished_append(asset_data, **kwargs)
         if append_ok:
             return False
 
