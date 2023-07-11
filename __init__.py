@@ -2244,6 +2244,8 @@ We welcome your feedback. If you encounter any issues or have ideas for improvem
         # UPDATER SETTINGS
         addon_updater_ops.update_settings_ui(self, context)
         addondir_row = layout.row()
+
+        # PATHS PREVIEW
         addondir_row.label(text=f"Installed at: {path.dirname(__file__)}")
         addondir_row.enabled = False
         globdir_row = layout.row()
