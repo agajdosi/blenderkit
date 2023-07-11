@@ -37,7 +37,7 @@ jobs:
       - name: Store daemon binary
         uses: actions/upload-artifact@v3
         with:
-          name: daemon-win-${{ github.ref_name }}-${{ steps.date }}.exe
+          name: daemon-win-${{ github.ref_name }}-${{ steps.date.outputs.date }}.exe
           path: out/daemon/daemon
 
   Build_daemon_macos:
@@ -56,7 +56,7 @@ jobs:
       - name: Store daemon binary
         uses: actions/upload-artifact@v3
         with:
-          name: daemon-macos-${{ github.ref_name }}-${{ steps.date }}
+          name: daemon-macos-${{ github.ref_name }}-${{ steps.date.outputs.date }}
           path: out/daemon/daemon
 
   Build_daemon_linux:
@@ -75,8 +75,8 @@ jobs:
       - name: Store daemon binary
         uses: actions/upload-artifact@v3
         with:
-          name: daemon-linux-${{ github.ref_name }}-${{ steps.date }}
-          path: out/daemon/daemon
+          name: daemon-linux-${{ github.ref_name }}-${{ steps.date.outputs.date }}
+          path: out/daemon/daemon.bin
 
   Build:
     runs-on: ubuntu-latest
@@ -90,7 +90,7 @@ jobs:
       - name: Store the build
         uses: actions/upload-artifact@v3
         with:
-          name: blenderkit-${{ github.ref_name }}-${{ steps.date }}
+          name: blenderkit-${{ github.ref_name }}-${{ steps.date.outputs.date }}
           path: |
             out
             !out/blenderkit.zip
