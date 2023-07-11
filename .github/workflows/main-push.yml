@@ -31,6 +31,16 @@ jobs:
       - run: python --version
       - run: python -m pip install pipenv
       - run: python dev.py compile
+      - name: Get current date and time
+        id: date
+        run: echo "date=$(date +'%Y-%m-%d--%H-%M-%S')" >> $GITHUB_OUTPUT
+      - name: Store daemon binary
+        uses: actions/upload-artifact@v3
+        with:
+          name: daemon-${{ github.ref_name }}-${{ env.date }}
+          path: |
+            out
+            !out/blenderkit.zip
 
   Build_daemon_macos:
     runs-on: macos-latest
@@ -42,6 +52,16 @@ jobs:
       - run: python --version
       - run: python -m pip install pipenv
       - run: python dev.py compile
+      - name: Get current date and time
+        id: date
+        run: echo "date=$(date +'%Y-%m-%d--%H-%M-%S')" >> $GITHUB_OUTPUT
+      - name: Store daemon binary
+        uses: actions/upload-artifact@v3
+        with:
+          name: daemon-${{ github.ref_name }}-${{ env.date }}
+          path: |
+            out
+            !out/blenderkit.zip
 
   Build_daemon_linux:
     runs-on: ubuntu-latest
@@ -53,6 +73,16 @@ jobs:
       - run: python --version
       - run: python -m pip install pipenv
       - run: python dev.py compile
+      - name: Get current date and time
+        id: date
+        run: echo "date=$(date +'%Y-%m-%d--%H-%M-%S')" >> $GITHUB_OUTPUT
+      - name: Store daemon binary
+        uses: actions/upload-artifact@v3
+        with:
+          name: daemon-${{ github.ref_name }}-${{ env.date }}
+          path: |
+            out
+            !out/blenderkit.zip
 
   Build:
     runs-on: ubuntu-latest
@@ -62,11 +92,11 @@ jobs:
         run: python dev.py build
       - name: Get current date and time
         id: date
-        run: echo "::set-output name=date::$(date +'%Y-%m-%d--%H-%M-%S')"
+        run: echo "date=$(date +'%Y-%m-%d--%H-%M-%S')" >> $GITHUB_OUTPUT
       - name: Store the build
         uses: actions/upload-artifact@v3
         with:
-          name: blenderkit-${{ github.ref_name }}-${{ steps.date.outputs.date }}
+          name: blenderkit-${{ github.ref_name }}-${{ env.date }}
           path: |
             out
             !out/blenderkit.zip
