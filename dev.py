@@ -94,6 +94,7 @@ def compile_daemon():
                 "--follow-imports",
                 "--remove-output",
                 "--output-dir=../out/daemon",
+                "--assume-yes-for-downloads",
                 "daemon.py",
             ],
             cwd="daemon",
