@@ -65,6 +65,7 @@ def compile_daemon():
     """Compile daemon for current platform."""
     subprocess.check_call(["pipenv", "install", "-r", "requirements.txt"])
     subprocess.check_call(["pipenv", "install", "nuitka"])
+    print("PLATFORM:", sys.platform)
     if sys.platform == "darwin":
         subprocess.check_call(
             [
