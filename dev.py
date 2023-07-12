@@ -81,7 +81,7 @@ def compile_daemon():
             ],
             cwd="daemon",
         )
-        print('macos build done')
+        print("macos build done")
     if sys.platform == "win32":
         subprocess.check_call(
             [
@@ -99,7 +99,7 @@ def compile_daemon():
             ],
             cwd="daemon",
         )
-        print('windows build done')
+        print("windows build done")
     if sys.platform == "linux":
         subprocess.check_call(
             [
@@ -116,7 +116,7 @@ def compile_daemon():
             ],
             cwd="daemon",
         )
-        print('linux build done')
+        print("linux build done")
     os.remove("Pipfile")
     os.remove("Pipfile.lock")
 

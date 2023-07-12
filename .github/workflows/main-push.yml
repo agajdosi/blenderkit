@@ -37,8 +37,8 @@ jobs:
       - name: Store daemon binary
         uses: actions/upload-artifact@v3
         with:
-          name: daemon-win-${{ github.ref_name }}-${{ steps.date.outputs.date }}.exe
-          path: out/daemon/daemon
+          name: daemon-win-${{ github.ref_name }}-${{ steps.date.outputs.date }}
+          path: out/daemon/daemon.exe
 
   Build_daemon_macos:
     runs-on: macos-latest
