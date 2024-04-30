@@ -29,37 +29,37 @@ def blenderkit_client_build(abs_build_dir: str):
     build_dir = os.path.join(abs_build_dir, "client")
     builds = [
         {
-            "env": {"GOOS": "windows", "GOARCH": "amd64", "CGO_ENABLED": "0"},
+            "env": {"GOOS": "windows", "GOARCH": "amd64", "CGO_ENABLED": "1"},
             "output": os.path.join(
                 f"v{client_version}", "blenderkit-client-windows-x86_64.exe"
             ),
         },
         {
-            "env": {"GOOS": "windows", "GOARCH": "arm64", "CGO_ENABLED": "0"},
+            "env": {"GOOS": "windows", "GOARCH": "arm64", "CGO_ENABLED": "1"},
             "output": os.path.join(
                 f"v{client_version}", f"blenderkit-client-windows-arm64.exe"
             ),
         },
         {
-            "env": {"GOOS": "darwin", "GOARCH": "amd64", "CGO_ENABLED": "0"},
+            "env": {"GOOS": "darwin", "GOARCH": "amd64", "CGO_ENABLED": "1"},
             "output": os.path.join(
                 f"v{client_version}", f"blenderkit-client-macos-x86_64"
             ),
         },
         {
-            "env": {"GOOS": "darwin", "GOARCH": "arm64", "CGO_ENABLED": "0"},
+            "env": {"GOOS": "darwin", "GOARCH": "arm64", "CGO_ENABLED": "1"},
             "output": os.path.join(
                 f"v{client_version}", f"blenderkit-client-macos-arm64"
             ),
         },
         {
-            "env": {"GOOS": "linux", "GOARCH": "amd64", "CGO_ENABLED": "0"},
+            "env": {"GOOS": "linux", "GOARCH": "amd64", "CGO_ENABLED": "1", "CC": "x86_64-linux-musl-gcc"},
             "output": os.path.join(
                 f"v{client_version}", f"blenderkit-client-linux-x86_64"
             ),
         },
         {
-            "env": {"GOOS": "linux", "GOARCH": "arm64", "CGO_ENABLED": "0"},
+            "env": {"GOOS": "linux", "GOARCH": "arm64", "CGO_ENABLED": "1", "CC": "aarch64-linux-musl-gcc"},
             "output": os.path.join(
                 f"v{client_version}", f"blenderkit-client-linux-arm64"
             ),

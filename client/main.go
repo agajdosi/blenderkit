@@ -33,6 +33,8 @@ import (
 	"sync"
 	"time"
 
+	"fyne.io/systray"
+	"fyne.io/systray/example/icon"
 	"github.com/google/uuid"
 	"github.com/gookit/color"
 )
@@ -198,6 +200,17 @@ func handleChannels() {
 	}
 }
 
+func onReady() {
+	systray.SetIcon(icon.Data)
+	systray.SetTooltip("BlenderKit Client")
+	systray.AddMenuItem("Settings", "Settings of the Client")
+	systray.AddSeparator()
+	systray.AddMenuItem("Quit", "Quit the whole app")
+}
+
+func onExit() {
+}
+
 func main() {
 	var err error
 	Port = flag.String("port", "62485", "port to listen on")
@@ -257,10 +270,14 @@ func main() {
 	mux.HandleFunc("/wrappers/blocking_request", BlockingRequestHandler)
 	mux.HandleFunc("/wrappers/nonblocking_request", NonblockingRequestHandler)
 
-	err = http.ListenAndServe(fmt.Sprintf("localhost:%s", *Port), mux)
-	if err != nil {
-		log.Fatalf("Failed to start server: %v\n", err)
-	}
+	go func() {
+		err = http.ListenAndServe(fmt.Sprintf("localhost:%s", *Port), mux)
+		if err != nil {
+			log.Fatalf("Failed to start server: %v\n", err)
+		}
+	}()
+
+	systray.Run(onReady, onExit)
 }
 
 func monitorReportAccess() {
