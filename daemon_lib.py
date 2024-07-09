@@ -550,6 +550,8 @@ def start_blenderkit_client():
     log_path = get_client_log_path()
     client_binary_path, client_version = get_client_binary_path()
 
+    ok = utils.check_binary_permissions(client_binary_path)
+
     creation_flags = 0
     if platform.system() == "Windows":
         creation_flags = subprocess.CREATE_NO_WINDOW
@@ -673,6 +675,8 @@ def ensure_client_binary_installed():
     os.makedirs(path.dirname(client_binary_path), exist_ok=True)
     shutil.copy(preinstalled_client_path, client_binary_path)
     os.chmod(client_binary_path, 0o711)
+    # chmod works only on Mac/Linux, for Windows:
+    # https://learn.microsoft.com/en-us/windows-server/administration/windows-commands/icacls
     bk_logger.info(f"BlenderKit-Client binary copied to {client_binary_path}")
 
 

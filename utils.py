@@ -1283,7 +1283,7 @@ def list2string(lst: list) -> str:
 
 
 def check_globaldir_permissions():
-    """Check if the user has the required permissions to upload assets."""
+    """Check if the add-on has the required permissions to in global_dir."""
     global_dir = bpy.context.preferences.addons[__package__].preferences.global_dir
     if os.path.isfile(global_dir):
         reports.add_report(
@@ -1312,6 +1312,19 @@ def check_globaldir_permissions():
         return True
     reports.add_report(
         f"Change path or give permissions to Global dir, wrong permissions now: exists={exists}, write={can_write}, execute={can_execute}.",
+        15,
+        type="ERROR",
+    )
+
+def check_binary_permissions(path: str) -> bool:
+    """Check if the add-on has the required permissions to execute binary."""
+    exists = os.access(path, os.F_OK)
+    can_execute = os.access(path, os.X_OK)
+    if exists and can_execute:
+        bk_logger.info(f"Binary permissions are OK: exists={exists}, execute={can_execute}")
+        return True
+    reports.add_report(
+        f"Change path or give permissions to binary, wrong permissions now: exists={exists}, execute={can_execute}",
         15,
         type="ERROR",
     )
