@@ -1195,11 +1195,12 @@ def check_context(context, area_type="VIEW_3D"):
 
 
 def get_fake_context(context=None, area_type="VIEW_3D"):
+    bk_logger.debug(f"get_fake_context(context={context}, area_type={area_type})....")
     C_dict = (
         {}
     )  # context.copy() #context.copy was a source of problems - incompatibility with addons that also define context
     C_dict.update(region="WINDOW")
-
+    bk_logger.debug("get_fake_context() C_dict updated")
     # if hasattr(context,'window') and hasattr(context,'screen') and hasattr(context,'area') and hasattr(context,'region'):
     #     w = context.window
     #     s = context.screen
@@ -1213,8 +1214,12 @@ def get_fake_context(context=None, area_type="VIEW_3D"):
     #         return C_dict
 
     # new context
+    bk_logger.debug("get_fake_context() getting largest area")
     w, a, r = get_largest_area(context=context, area_type=area_type)
+
+    
     if w:
+        bk_logger.debug("get_fake_context() setting override")
         # sometimes there is no area of the requested type. Let's face it, some people use Blender without 3d view.
         override = {
             "window": w,
@@ -1223,8 +1228,10 @@ def get_fake_context(context=None, area_type="VIEW_3D"):
             "space_data": a.spaces.active,
             "region": r,
         }
-
         C_dict.update(override)
+    
+    bk_logger.debug("get_fake_context() returning fake context")
+
     return C_dict
 
 

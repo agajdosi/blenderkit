@@ -424,8 +424,9 @@ class RunAssetBarWithContext(bpy.types.Operator):
         # if check_context(context):
         #     bpy.ops.view3d.blenderkit_asset_bar_widget('INVOKE_REGION_WIN', keep_running=self.keep_running,
         #                                            do_search=self.do_search)
-
+        bk_logger.debug("RunAssetBarWithContext() calling get_fake_context()")
         C_dict = utils.get_fake_context()
+        bk_logger.debug("RunAssetBarWithContext() got get_fake_context()")
 
         if bpy.app.version < (4, 0, 0):
             if C_dict.get("window"):  # no 3d view, no asset bar.

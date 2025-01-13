@@ -123,20 +123,25 @@ def queue_worker():
             back_to_queue.append(task)
         else:
             bk_logger.debug(
-                "task queue task:" + str(task.command) + str(task.arguments)
+                f"task queue task: task.command={str(task.command)}, task.arguments={str(task.arguments)}"
             )
             try:
                 if task.fake_context:
+                    bk_logger.debug("queue_worker() calling get_fake_context()")
                     fc = utils.get_fake_context(
                         bpy.context, area_type=task.fake_context_area
                     )
+                    bk_logger.debug(f"queue_worker() got fake context: {fc}")
                     if bpy.app.version < (4, 0, 0):
                         task.command(fc, *task.arguments)
+                        bk_logger.debug(f"task.command({fc}, {task.arguments}) finished")
                     else:
                         with bpy.context.temp_override(**fc):
                             task.command(*task.arguments)
+                        bk_logger.debug(f"task.command({task.arguments}) within context override ({fc}) has finished")
                 else:
                     task.command(*task.arguments)
+                    bk_logger.debug(f"task.command({task.arguments}) without fake context has finished")
             except Exception as e:
                 bk_logger.error(
                     "task queue failed task:"

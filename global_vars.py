@@ -17,7 +17,7 @@
 # ##### END GPL LICENSE BLOCK #####
 
 from collections import deque
-from logging import INFO, WARN
+from logging import INFO, WARN, DEBUG
 from os import environ
 from subprocess import Popen
 from typing import Optional
@@ -48,7 +48,7 @@ BKIT_PROFILE: datas.MineProfile = datas.MineProfile()
 BKIT_AUTHORS: dict[int, datas.UserProfile] = {}
 """All loaded profiles of other users. Current user is also present in stripped down version. Key is the UserProfile.id."""
 
-LOGGING_LEVEL_BLENDERKIT = INFO
+LOGGING_LEVEL_BLENDERKIT = DEBUG
 LOGGING_LEVEL_IMPORTED = WARN
 PREFS = {}
 

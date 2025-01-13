@@ -31,7 +31,7 @@ from .bl_ui_widgets.bl_ui_image import BL_UI_Image
 from .ui_bgl import get_text_size
 
 
-bk_logger = logging.getLogger("blenderkit")
+bk_logger = logging.getLogger(__name__)
 
 disclaimer_counter = 0
 
@@ -41,7 +41,7 @@ class BlenderKitDisclaimerOperator(BL_UI_OT_draw_operator):
     bl_label = "BlenderKit disclaimer"
     bl_description = "BlenderKit disclaimer"
     bl_options = {"REGISTER"}
-    instances = []
+    instances = list()
 
     message: StringProperty(  # type: ignore[valid-type]
         name="message",
@@ -73,9 +73,11 @@ class BlenderKitDisclaimerOperator(BL_UI_OT_draw_operator):
     )
 
     def cancel_press(self, widget):
+        bk_logger.debug(f"cancel_press() on {self} running")
         self.finish()
 
     def open_link(self, widget):
+        bk_logger.debug(f"open_link() on {self} running")
         if self.url == "":
             return
         server_url = global_vars.SERVER
@@ -85,6 +87,7 @@ class BlenderKitDisclaimerOperator(BL_UI_OT_draw_operator):
         bpy.ops.wm.url_open(url=self.url)
 
     def __init__(self, *args, **kwargs):
+        bk_logger.debug("BlenderKitDisclaimerOperator __init__ started")
         super().__init__(*args, **kwargs)
         ui_scale = bpy.context.preferences.view.ui_scale
 
@@ -137,8 +140,10 @@ class BlenderKitDisclaimerOperator(BL_UI_OT_draw_operator):
         self.button_close.hover_bg_color = self.hover_bg_color
         self.button_close.text = ""
         self.button_close.set_mouse_down(self.cancel_press)
+        bk_logger.debug("BlenderKitDisclaimerOperator __init__ finished")
 
     def on_invoke(self, context, event):
+        bk_logger.debug("BlenderKitDisclaimerOperator on_invoke started")
         # Add new widgets here (TODO: perhaps a better, more automated solution?)
         self.context = context
         self.instances.append(self)
@@ -165,8 +170,10 @@ class BlenderKitDisclaimerOperator(BL_UI_OT_draw_operator):
         self.init_widgets(context, widgets)
         self.panel.add_widgets(widgets_panel)
         self.start_time = time.time()
+        bk_logger.debug("BlenderKitDisclaimerOperator on_invoke finished")
 
     def modal(self, context, event):
+        bk_logger.debug(f"modal() {self}, {context}, {event} running")
         if self._finished:
             return {"FINISHED"}
 
@@ -192,6 +199,7 @@ class BlenderKitDisclaimerOperator(BL_UI_OT_draw_operator):
         return {"PASS_THROUGH"}
 
     def reset_colours(self):
+        bk_logger.debug(f"reset_colours() on {self} running")
         for widget in self.widgets:
             widget.bg_color = self.bg_color
             widget.hover_bg_color = self.hover_bg_color
@@ -200,6 +208,7 @@ class BlenderKitDisclaimerOperator(BL_UI_OT_draw_operator):
 
     def fadeout(self):
         """Fade out widget after some time"""
+        bk_logger.debug(f"fadeout() on {self} running")
         m = 0.08
         all_zero = True
         for widget in self.widgets:
@@ -220,6 +229,16 @@ class BlenderKitDisclaimerOperator(BL_UI_OT_draw_operator):
         if all_zero:
             self.finish()
 
+    def finish(self):
+        self._finished = True
+        self.unregister_handlers(bpy.context)
+        if self in self.__class__.instances:
+            self.__class__.instances.remove(self)
+        if bpy.context.region is not None:
+            bpy.context.region.tag_redraw()
+        self.on_finish(bpy.context)
+
+
     @classmethod
     def unregister(cls):
         bk_logger.debug(f"unregistering class {cls}")
@@ -227,22 +246,36 @@ class BlenderKitDisclaimerOperator(BL_UI_OT_draw_operator):
         for instance in instances_copy:
             bk_logger.debug(f"- class instance {instance}")
             try:
+                instance.finish()
+            except Exception as e:
+                bk_logger.debug(f"-- error instance.finish(): {e}")
+
+
+            try:
                 instance.unregister_handlers(instance.context)
+                bk_logger.debug(f"-- success unregister_handlers({instance.context})")
             except Exception as e:
                 bk_logger.debug(f"-- error unregister_handlers(): {e}")
             try:
                 instance.on_finish(instance.context)
+                bk_logger.debug(f"-- success on_finish({instance.context})")
             except Exception as e:
                 bk_logger.debug(f"-- error calling on_finish() {e}")
+            
             if bpy.context.region is not None:
                 bpy.context.region.tag_redraw()
-
-            cls.instances.remove(instance)
+            #cls.instances.remove(instance)
+        
+        cls.instances.clear()  # Just to be sure.
+        bk_logger.debug(f"{cls} unregistered, cls.instances={cls.instances}")
 
 
 def run_disclaimer_task(message: str, url: str, tip: bool):
+    bk_logger.debug("run_disclaimer_task() has started")
     fake_context = utils.get_fake_context(bpy.context)
+    bk_logger.debug("run_disclaimer_task() got get_fake_context()")
     if bpy.app.version < (4, 0, 0):
+        bk_logger.debug("calling bpy.ops.view3d.blenderkit_disclaimer_widget()")
         bpy.ops.view3d.blenderkit_disclaimer_widget(  # type: ignore[attr-defined]
             fake_context,
             "INVOKE_DEFAULT",
@@ -252,7 +285,9 @@ def run_disclaimer_task(message: str, url: str, tip: bool):
             tip=tip,
         )
     else:
+        bk_logger.debug(f"with temp_override from fake_context={fake_context}")
         with bpy.context.temp_override(**fake_context):  # type: ignore[attr-defined]
+            bk_logger.debug("calling bpy.ops.view3d.blenderkit_disclaimer_widget()")
             bpy.ops.view3d.blenderkit_disclaimer_widget(  # type: ignore[attr-defined]
                 "INVOKE_DEFAULT",
                 message=message,
@@ -260,18 +295,23 @@ def run_disclaimer_task(message: str, url: str, tip: bool):
                 fadeout_time=8,
                 tip=tip,
             )
+            bk_logger.debug("ended calling bpy.ops.view3d.blenderkit_disclaimer_widget()")
+    bk_logger.debug(f"run_disclaimer_task() has finished")
 
 
 def handle_disclaimer_task(task: client_tasks.Task):
     """Handles incoming disclaimer task. If there are any results, it shows them in disclaimer popup.
     If the results are empty, it shows random tip in the disclaimer popup.
     """
+    bk_logger.debug(f"handle_disclaimer_task() started")
     global disclaimer_counter
     disclaimer_counter = -1
     if task.status == "finished":
         if task.result.get("count", 0) == 0:
+            bk_logger.debug(f"handler_disclaimer_task() -> show_random_tip()")
             return show_random_tip()
 
+        bk_logger.debug(f"handle_disclaimer_task() - getting preferences")
         disclaimer = task.result["results"][0]
         preferences = bpy.context.preferences.addons[__package__].preferences  # type: ignore
         if preferences.announcements_on_start is False:  # type: ignore[union-attr]
@@ -280,10 +320,9 @@ def handle_disclaimer_task(task: client_tasks.Task):
             )
             return show_random_tip()
 
-        tasks_queue.add_task(
-            (run_disclaimer_task, (disclaimer["message"], disclaimer["url"], False)),
-            wait=0,
-        )
+        #tasks_queue.add_task((run_disclaimer_task, (disclaimer["message"], disclaimer["url"], False)),wait=0,)
+        bk_logger.debug(f"calling run_disclaimer_task()")
+        run_disclaimer_task(disclaimer["message"], disclaimer["url"], False)
         return
 
     if task.status == "error":
@@ -295,6 +334,7 @@ def handle_disclaimer_task(task: client_tasks.Task):
 
 def show_random_tip():
     """Shows random tip in the disclaimer popup if tips_on_start are enabled."""
+    bk_logger.debug(f"show_random_tip()")
     preferences = bpy.context.preferences.addons[__package__].preferences
     if preferences.tips_on_start is False:
         return
@@ -317,6 +357,7 @@ def show_disclaimer_timer():
     If Client does not go online in few seconds, it shows the tips instead and ends.
     """
     global disclaimer_counter
+    bk_logger.debug(f"show_disclaimer_timer running disclaimer_counter={disclaimer_counter}")
     if disclaimer_counter == -1:
         return
 

@@ -2447,9 +2447,13 @@ classes = (
 
 
 def register():
+    bk_logger.debug("register() started")
     reload(global_vars)
     global_vars.VERSION = VERSION
+    bk_logger.debug("global_vars reloaded()")
+    
     bpy.utils.register_class(BlenderKitAddonPreferences)
+    bk_logger.debug("addonPreferences registered")
 
     addon_updater_ops.register({"version": VERSION})
     for cls in classes:

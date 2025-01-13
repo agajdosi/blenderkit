@@ -111,7 +111,7 @@ def client_communication_timer():
     This function is the only one responsible for keeping the Client up and running.
     """
     global pending_tasks
-    bk_logger.debug("Getting tasks from Client")
+    bk_logger.debug("client_communication_timer(): Getting tasks from Client")
     search.check_clipboard()
     results = list()
     try:
@@ -128,7 +128,7 @@ def client_communication_timer():
         wm = bpy.context.window_manager
         wm.blenderkitUI.logo_status = "logo"
 
-    bk_logger.debug("Handling tasks")
+    bk_logger.debug(f"client_communication_timer(): Handling tasks")
     results_converted_tasks = []
 
     # convert to task type
@@ -145,15 +145,18 @@ def client_communication_timer():
         )
         results_converted_tasks.append(task)
 
+    bk_logger.debug(f"client_communication_timer(): tasks converted")
     # add pending tasks which were already parsed but not handled
     results_converted_tasks.extend(pending_tasks)
     pending_tasks.clear()
 
+    bk_logger.debug(f"client_communication_timer(): tasks extended")
     for task in results_converted_tasks:
         handle_task(task)
 
-    bk_logger.debug("Task handling finished")
+    bk_logger.debug("task_communication_timer(): Task handling finished")
     delay = bpy.context.preferences.addons[__package__].preferences.client_polling
+    bk_logger.debug("task_communication_timer(): delay set")
     if len(download.download_tasks) > 0:
         return min(0.2, delay)
     return delay
@@ -248,6 +251,7 @@ def task_error_overdrive(task: client_tasks.Task) -> None:
 
 def handle_task(task: client_tasks.Task):
     """Handle incomming task information. Sort tasks by type and call apropriate functions."""
+    bk_logger.debug(f"handle_task() task={task.task_type, task.status}")
     if task.status == "error":
         task_error_overdrive(task)
 
@@ -291,6 +295,7 @@ def handle_task(task: client_tasks.Task):
 
     # HANDLE DISCLAIMER
     if task.task_type == "disclaimer":
+        bk_logger.debug(f"handle_task() -> calling handle_disclaimer_task()")
         return disclaimer_op.handle_disclaimer_task(task)
 
     # HANDLE CATEGORIES FETCH

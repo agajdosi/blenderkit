@@ -1,6 +1,8 @@
+import logging
 import bpy
 from bpy.types import Operator
 
+bk_logger = logging.getLogger(__name__)
 
 class BL_UI_OT_draw_operator(Operator):
     bl_idname = "object.bl_ui_ot_draw_operator"
@@ -14,10 +16,11 @@ class BL_UI_OT_draw_operator(Operator):
         self.draw_event = None
         self._finished = False
 
-        self.widgets = []
+        self.widgets = list()
         self._timer_interval = 0.1
 
     def init_widgets(self, context, widgets):
+        bk_logger.debug(f"init_widgets({self}, {context}, {widgets})")
         self.widgets = widgets
         for widget in self.widgets:
             widget.init(context)
@@ -29,31 +32,41 @@ class BL_UI_OT_draw_operator(Operator):
         self._finished = True
 
     def invoke(self, context, event):
+        bk_logger.debug(f"invoke({self}, {context}, {event})")
         self.on_invoke(context, event)
 
         args = (self, context)
 
         self.register_handlers(args, context, timer_interval=self._timer_interval)
-
+        bk_logger.debug(f"invoke({self}, {context}, {event}) - handlers registered")
         context.window_manager.modal_handler_add(self)
+
+        bk_logger.debug(f"invoke({self}, {context}, {event}) - modal_handler_add() finished")
 
         # first set pointers to keep track if the area is still available
         self.active_window_pointer = context.window.as_pointer()
         self.active_area_pointer = context.area.as_pointer()
         self.active_region_pointer = context.region.as_pointer()
 
+        bk_logger.debug(f"invoke({self}, {context}, {event}) - pointers set")
+
         context.region.tag_redraw()
+
+        bk_logger.debug(f"invoke({self}, {context}, {event}) - tag_redraw() finished")
         return {"RUNNING_MODAL"}
 
     def register_handlers(self, args, context, timer_interval=0.1):
+        bk_logger.debug(f"register_handlers({self},{context})")
         self.draw_handle = bpy.types.SpaceView3D.draw_handler_add(
             self.draw_callback_px, args, "WINDOW", "POST_PIXEL"
         )
+        bk_logger.debug(f"register_handlers({self},{context}) - draw_handle finished")
         self.draw_event = context.window_manager.event_timer_add(
             timer_interval, window=context.window
         )
 
     def unregister_handlers(self, context):
+        bk_logger.debug(f"unregister_handlers({self},{context})")
         context.window_manager.event_timer_remove(self.draw_event)
 
         bpy.types.SpaceView3D.draw_handler_remove(self.draw_handle, "WINDOW")
@@ -62,6 +75,7 @@ class BL_UI_OT_draw_operator(Operator):
         self.draw_event = None
 
     def handle_widget_events(self, event):
+        bk_logger.debug(f"handle_widget_events({self}, {event})")
         result = False
         # we iterate widgets reversed, so top buttons can get processed first if buttons overlap.
         for widget in reversed(self.widgets):
@@ -86,6 +100,7 @@ class BL_UI_OT_draw_operator(Operator):
         return {"PASS_THROUGH"}
 
     def finish(self):
+        bk_logger.debug(f"finish({self})")
         self.unregister_handlers(bpy.context)
         # it is possible that the area has been closed, so we check if it is still available
         if bpy.context.region is not None:
@@ -94,12 +109,15 @@ class BL_UI_OT_draw_operator(Operator):
 
     # Draw handler to paint onto the screen
     def draw_callback_px(self, op, context):
+        bk_logger.debug(f"draw_callback_px({self}, {op}, {context})")
         draw_callback_px_separated(self, op, context)
 
     def cancel(self, context):
         """Cancel the modal operator and finish. This is called before unregistration on Blender quit. Has to be here, so BL_UI_Button, BL_UI_Drag_Panel, BL_UI_Image and other elements are removed with finish().
         We cannot call this during unregister because at that stage Operator is already removed, but BL_UI_Button is kept in memory causing memory leaks. Issue: #770
         """
+        bk_logger.debug(f"cancel called on {self}, {context}")
+        self._finished = True
         self.finish()
 
 
