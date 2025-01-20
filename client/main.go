@@ -450,7 +450,9 @@ func reportHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	expectedVersion := strings.TrimLeft(data.ExpectedClientVersion, "v")
-	if expectedVersion != ClientVersion && data.ExpectedClientVersion != "any" { // Addons expectations does not match this Client version
+	if data.ExpectedClientVersion != "" { // TODO: remove in v3.15, for now we ignore older versions, Client will try to serve them
+	} else if data.ExpectedClientVersion != "any" { // Add-on requests any version of Client
+	} else if expectedVersion != ClientVersion { // Addons expectations does not match this Client version
 		BKLog.Printf("%v Add-on %s expects client=%s, request to /report rejected.", EmoWarning, data.AddonVersion, data.ExpectedClientVersion)
 		msg := fmt.Sprintf("Client-v%s refused the request as Client-v%s was expected by add-on v%s.", ClientVersion, expectedVersion, data.AddonVersion)
 		http.Error(w, msg, http.StatusPreconditionFailed) // 412

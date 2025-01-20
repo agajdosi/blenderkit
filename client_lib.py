@@ -151,6 +151,10 @@ def request_report(url: str, data: dict) -> dict:
             raise requests.HTTPError(
                 f"{http_responses[resp.status_code]}: {resp.text}", response=resp
             )
+        if (
+            "BlenderKit-Client-Version" not in resp.headers
+        ):  # pre BlenderKit v3.13.1 Client, refusing to connect to it, gonna start own version after this error
+            raise requests.HTTPError("BlenderKit-Client-Version header not set")
         return resp.json()
 
 
