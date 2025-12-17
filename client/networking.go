@@ -68,7 +68,15 @@ func CreateHTTPClients(proxyURL, proxyWhich, sslContext, trustedCACerts string) 
 	tlsConfig := GetTLSConfig(sslContext)
 	tlsConfig.RootCAs = GetCACertPool(trustedCACerts)
 
-	ClientAPI = GetHTTPClient(nil, tlsConfig, proxy, time.Minute)
+	apiDialer := net.Dialer{
+		Timeout:   3 * time.Second,
+		KeepAlive: 30 * time.Second,
+	}
+	apiTransport := http.DefaultTransport.(*http.Transport).Clone()
+	apiTransport.DialContext = apiDialer.DialContext
+	apiTransport.TLSHandshakeTimeout = 5 * time.Second
+	ClientAPI = GetHTTPClient(apiTransport, tlsConfig, proxy, time.Minute)
+
 	ClientDownloads = GetHTTPClient(nil, tlsConfig, proxy, 1*time.Hour)
 	ClientUploads = GetHTTPClient(nil, tlsConfig, proxy, 24*time.Hour)
 	ClientBigThumbs = GetHTTPClient(nil, tlsConfig, proxy, time.Minute)
