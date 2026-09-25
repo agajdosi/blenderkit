@@ -5425,6 +5425,15 @@ def handle_bkclientjs_get_asset(task: "search.client_tasks.Task"):
         bk_logger.error("No asset data found in task")
         return
 
+    # Download uses local api_key, so we are here checking if user is logged-in
+    # and overwriting the canDownload (based on web log-in).
+    # TODO: api_key comes from web task, implement a way for download to use this key,
+    # then we could overwrite only if not logged in on web, but is logged in.
+    print(">>>bkclientjs-canDownload:", asset_data.get("canDownload", False))
+    if asset_data.get("canDownload", False) is False:
+        if global_vars.BKIT_PROFILE.currentPlanName != "Free": 
+            asset_data["canDownload"] = True
+
     # Parse the asset data
     parsed_asset_data = search.parse_result(asset_data)
     if not parsed_asset_data:
