@@ -20,7 +20,6 @@ import unittest
 
 import bpy
 
-
 # ``test.py`` imports this as ``<addon>.tests.<name>``; strip ``.tests`` so
 # ``__package__`` is the add-on's own module - needed by the
 # ``bpy...addons[__package__]`` lookups below. Scanning ``addons`` for
@@ -143,8 +142,28 @@ class TestPreferencesAccessible(unittest.TestCase):
 
     def test_preferences_attributes(self):
         prefs = bpy.context.preferences.addons[__package__].preferences
-        for attr in ("api_key", "global_dir", "thumb_size", "client_port"):
+        for attr in (
+            "api_key",
+            "global_dir",
+            "thumb_size",
+            "client_port",
+            "smooth_scroll",
+            "show_performance_settings",
+        ):
             self.assertTrue(
                 hasattr(prefs, attr),
                 f"Preference attribute '{attr}' missing",
             )
+
+    def test_preferences_section_state_is_not_saved(self):
+        prefs = bpy.context.preferences.addons[__package__].preferences
+        for attr in (
+            "show_interface_settings",
+            "show_assetbar_settings",
+            "show_performance_settings",
+            "show_notification_settings",
+            "show_thumbnail_settings",
+            "show_network_settings",
+        ):
+            prop = prefs.bl_rna.properties[attr]
+            self.assertTrue(prop.is_skip_save)
